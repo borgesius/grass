@@ -103,6 +103,32 @@ python3 plant.py patterns/heart.txt --repo /path/to/grass
 
 ---
 
+## Using This for Your Own Profile
+
+**Don't fork** — you'd inherit all of borgesius's commits and have to clear immediately.
+
+Instead, create a fresh repo and use `--setup` to wire this clone to it:
+
+```bash
+# 1. Create a new empty repo on GitHub: github.com/new
+#    Name it anything (e.g. "grass"). Do NOT initialize with a README.
+
+# 2. Clone this repo for the scripts
+git clone https://github.com/borgesius/grass.git
+cd grass
+
+# 3. Point it at your new repo and push just the scripts (no grass commits)
+python3 plant.py --setup https://github.com/yourusername/grass.git
+
+# 4. Plant your art
+python3 plant.py patterns/heart.txt --intensity 100
+git push
+```
+
+`--setup` clears any existing grass commits, swaps the remote to your repo, and pushes the scripts. Your clone is now yours — borgesius's commits never touch your profile.
+
+---
+
 ## Safety
 
 `plant.py` refuses to run in any directory that doesn't contain a `.grass` marker file. This prevents accidentally running `--clear` in the wrong repo.

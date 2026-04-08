@@ -236,6 +236,44 @@ def run_plant(pattern_file: str, repo: str, dry_run: bool, clear: bool, intensit
     print("Push with: git push")
 
 
+def setup_new_repo(remote_url: str, repo: str) -> None:
+    """
+    Set up this clone as a fresh grass repo pointed at a new remote.
+    Wipes all grass commits, swaps the remote, and pushes just the scripts.
+    """
+    check_grass_marker(repo)
+
+    print(f"Setting up grass for new remote: {remote_url}")
+
+    # Clear all grass commits first
+    result = subprocess.run(
+        ["git", "log", "--oneline", "--all"],
+        cwd=repo, capture_output=True, text=True,
+    )
+    grass_commits = [l for l in result.stdout.splitlines() if GRASS_MARKER in l]
+    if grass_commits:
+        print(f"Clearing {len(grass_commits)} existing grass commits...")
+        clear_graph_commits(repo, dry_run=False)
+
+    # Swap remote
+    subprocess.run(["git", "remote", "set-url", "origin", remote_url], cwd=repo, check=True)
+    print(f"Remote set to: {remote_url}")
+
+    # Push scripts to new remote
+    result = subprocess.run(
+        ["git", "push", "-u", "origin", "main"],
+        cwd=repo, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print(f"Push failed: {result.stderr.strip()}")
+        print("Make sure the remote repo exists and you have push access.")
+        sys.exit(1)
+
+    print("✅ Setup complete. Your grass repo is ready.")
+    print(f"   Remote: {remote_url}")
+    print("   Next: python3 plant.py patterns/heart.txt --intensity 100 && git push")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Paint GitHub contribution graph art using backdated commits.")
     parser.add_argument("pattern", nargs="?", help="Path to 7-row ASCII art pattern file")
@@ -243,10 +281,15 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Preview without creating commits")
     parser.add_argument("--clear", action="store_true", help="Wipe all grass commits and reset repo")
     parser.add_argument("--intensity", type=int, default=None, help="Override all cells with N commits")
+    parser.add_argument("--setup", metavar="REMOTE_URL", help="Set up this clone for a new GitHub repo (swaps remote, clears grass, pushes scripts)")
     args = parser.parse_args()
 
+    if args.setup:
+        setup_new_repo(remote_url=args.setup, repo=args.repo)
+        return
+
     if not args.clear and not args.pattern:
-        parser.error("pattern file is required unless --clear is used")
+        parser.error("pattern file is required unless --clear or --setup is used")
 
     run_plant(
         pattern_file=args.pattern or "",
