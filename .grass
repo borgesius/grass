@@ -1,0 +1,5 @@
+# grass repo marker
+# https://github.com/borgesius/grass
+#
+# This file marks the repo as a safe target for plant.py.
+# plant.py will refuse to run in any repo without this file.
